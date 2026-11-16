@@ -76,6 +76,20 @@ async function handleGet(res, code) {
   res.end(image);
 }
 
+async function readBody(req) {
+  const chunks = [];
+  for await (const chunk of req) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
+}
+
+async function handlePut(req, res, code) {
+  const body = await readBody(req);
+  await fs.writeFile(filePath(code), body);
+  send(res, 201, 'Картинку збережено в кеш');
+}
+
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://localhost');
@@ -91,6 +105,9 @@ const server = http.createServer(async (req, res) => {
     switch (req.method) {
       case 'GET':
       await handleGet(res, code);
+      break;
+      case 'PUT':
+      await handlePut(req, res, code);
       break;
       default:
         send(res, 405, 'Метод не дозволено', { Allow: 'GET, PUT, DELETE' });
