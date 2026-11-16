@@ -40,6 +40,42 @@ function send(res, status, text, headers = {}) {
   res.end(text);
 }
 
+async function handleGet(res, code) {
+  const file = filePath(code);
+  let image;
+  let source;
+
+  try {
+    image = await fs.readFile(file);
+    source = 'cache';
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      throw err;
+    }
+
+    try {
+      const response = await superagent
+        .get(`https://http.cat/${code}`)
+        .buffer(true)
+        .parse(superagent.parse.image);
+      image = response.body;
+    } catch {
+      send(res, 404, 'Картинку не знайдено ні в кеші, ні на http.cat');
+      return;
+    }
+
+    await fs.writeFile(file, image);
+    source = 'http.cat';
+  }
+
+  res.writeHead(200, {
+    'Content-Type': 'image/jpeg',
+    'Content-Length': image.length,
+    'X-Image-Source': source,
+  });
+  res.end(image);
+}
+
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://localhost');
@@ -53,6 +89,9 @@ const server = http.createServer(async (req, res) => {
     const code = match[1];
 
     switch (req.method) {
+      case 'GET':
+      await handleGet(res, code);
+      break;
       default:
         send(res, 405, 'Метод не дозволено', { Allow: 'GET, PUT, DELETE' });
     }
