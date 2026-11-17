@@ -1,0 +1,41 @@
+#GET: картинки немає в кеші(200,X-Image-Source: http.cat)
+curl -s -D - -o out.jpg http://127.0.0.1:3000/418
+
+#GET: повторно(200, X-Image-Source: cache)
+curl -s -D - -o out.jpg http://127.0.0.1:3000/418
+
+#PUT: власна картинка(201)
+curl -s -i -X PUT --data-binary @my.jpg -H "Content-Type: image/jpeg" http://127.0.0.1:3000/418
+
+#GET після PUT(200, cache, моя картинка)
+curl -s -D - -o out.jpg http://127.0.0.1:3000/418
+
+#DELETE (200)
+curl -s -i -X DELETE http://127.0.0.1:3000/418
+
+#DELETE повторно(404)
+cat > test.txt << 'EOF'
+#GET: картинки немає в кеші(200,X-Image-Source: http.cat)
+curl -s -D - -o out.jpg http://127.0.0.1:3000/418
+
+#GET: повторно(200, X-Image-Source: cache)
+curl -s -D - -o out.jpg http://127.0.0.1:3000/418
+
+#PUT: власна картинка(201)
+curl -s -i -X PUT --data-binary @my.jpg -H "Content-Type: image/jpeg" http://127.0.0.1:3000/418
+
+#GET після PUT(200, cache, моя картинка)
+curl -s -D - -o out.jpg http://127.0.0.1:3000/418
+
+#DELETE (200)
+curl -s -i -X DELETE http://127.0.0.1:3000/418
+
+#DELETE повторно (404)
+
+curl -s -i -X DELETE http://127.0.0.1:3000/418
+
+#GET неіснуючого коду (404)
+curl -s -i http://127.0.0.1:3000/999
+
+#Недозволений метод (405, Allow)
+curl -s -i -X POST http://127.0.0.1:3000/418
