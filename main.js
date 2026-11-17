@@ -89,6 +89,18 @@ async function handlePut(req, res, code) {
   await fs.writeFile(filePath(code), body);
   send(res, 201, 'Картинку збережено в кеш');
 }
+async function handleDelete(res, code) {
+  try {
+    await fs.unlink(filePath(code));
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      send(res, 404, 'Картинки немає в кеші');
+      return;
+    }
+    throw err;
+  }
+  send(res, 200, 'Картинку видалено з кешу');
+}
 
 const server = http.createServer(async (req, res) => {
   try {
@@ -108,6 +120,9 @@ const server = http.createServer(async (req, res) => {
       break;
       case 'PUT':
       await handlePut(req, res, code);
+      break;
+      case 'DELETE':
+      await handleDelete(res, code);
       break;
       default:
         send(res, 405, 'Метод не дозволено', { Allow: 'GET, PUT, DELETE' });
